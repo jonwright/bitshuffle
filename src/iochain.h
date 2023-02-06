@@ -54,6 +54,12 @@
 #include <omp.h>
 #endif
 
+typedef struct o_chain {
+      void *in;
+      void *out;
+      uint32_t nbytes;
+    } o_chain;
+
 
 #define IOC_SIZE 33
 

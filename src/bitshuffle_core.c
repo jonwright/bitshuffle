@@ -1893,6 +1893,85 @@ int64_t bshuf_blocked_wrap_fun(bshufBlockFunDef fun, const void* in, void* out, 
     return cum_count + leftover_bytes;
 }
 
+/* Wrap a function for processing a single block to process an entire buffer in
+ * parallel. */
+int64_t bshuf_blocked_decompress_wrap_fun(bshufBlockFunDefDC fun, const void* in, void* out, \
+        const size_t size, const size_t elem_size, size_t block_size, const int option) {
+
+    omp_size_t ii = 0;
+    size_t nblocks = 0;
+    int64_t err = 0;
+    int64_t count, cum_count=0;
+    size_t last_block_size;
+    size_t leftover_bytes;
+    char *last_in;
+    char *last_out;
+    o_chain *C;
+    void** offsets;
+
+
+    if (block_size == 0) {
+        block_size = bshuf_default_block_size(elem_size);
+    }
+    if (block_size % BSHUF_BLOCKED_MULT) return -81;
+
+    nblocks =  (omp_size_t)( size / block_size );
+
+    last_block_size = size % block_size;
+    last_block_size = last_block_size - last_block_size % BSHUF_BLOCKED_MULT;
+
+    if (last_block_size){
+      nblocks += 1;
+    } else {
+      /* for the last run of the loop */
+      last_block_size = block_size;
+    }
+
+    /* the first thread reads all offsets and stores in a table
+     * this permits random ordering for the decompression loop
+     */
+    offsets = (void *) malloc( sizeof(void *)*nblocks  );
+    offsets[0] = (void *) in;
+    for (ii = 1; ii<nblocks; ii++){
+        offsets[ii] = (char *) offsets[ii-1] + bshuf_read_uint32_BE(offsets[ii - 1]) + 4;
+    }
+
+#if defined(_OPENMP)
+    #pragma omp parallel private(C, count) shared(offsets, last_in, last_out,) reduction(+ : cum_count)
+    {
+    /* thread local structure */
+    C = (struct o_chain *) malloc( sizeof(struct o_chain) );
+    #pragma omp for schedule(static)
+#endif
+    for (ii = 0; ii < nblocks; ii ++) {
+
+        C->in = (void*) ((char *) offsets[ii]);
+        C->out = (void*) ((char *) out + ii * block_size * elem_size );
+        C->nbytes = bshuf_read_uint32_BE(offsets[ii]);
+
+        if ( ii < (nblocks - 1) ){
+          count = fun(C, block_size, elem_size, option);
+        } else {
+          count = fun(C, last_block_size, elem_size, option);
+          last_in = (char *) C->in + C->nbytes + 4;
+          last_out = (char *) C->out + last_block_size * elem_size;
+        }
+        if (count < 0) err = count;
+        cum_count += count;
+
+    } /* for loop */
+    free(C);
+#if defined(_OPENMP)
+    } /* parallel region */
+#endif
+    if (err < 0) return err;
+
+    leftover_bytes = size % BSHUF_BLOCKED_MULT * elem_size;
+    memcpy(last_out, last_in, leftover_bytes);
+    free(offsets);
+    return cum_count + leftover_bytes;
+}
+
 
 /* Bitshuffle a single block. */
 int64_t bshuf_bitshuffle_block(ioc_chain *C_ptr, \
