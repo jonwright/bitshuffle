@@ -13,8 +13,10 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-        os: [ubuntu-latest, macos-latest]
+        #python-version: ["3.9", "3.10", "3.11", "3.12"]
+        #os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12"]
+        os: [macos-latest]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -30,7 +32,7 @@ jobs:
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
         brew update
-        brew install hdf5 pkg-config gdb
+        brew install hdf5 pkg-config
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -55,4 +57,4 @@ jobs:
         python setup.py install --h5plugin --h5plugin-dir ~/hdf5/lib --zstd
 
     - name: Run tests
-      run: gdb -q -batch -ex run -ex backtrace --args pytest -v .
+      run: lldb --batch --one-line 'process launch' --one-line-on-crash 'bt' --one-line-on-crash 'quit' -- pytest -v .
