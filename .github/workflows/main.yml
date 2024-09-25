@@ -55,4 +55,4 @@ jobs:
         python setup.py install --h5plugin --h5plugin-dir ~/hdf5/lib --zstd
 
     - name: Run tests
-      run: PYTHONFAULTHANDLER=1 pytest -v .
+      run: gdb -q -batch -ex run -ex backtrace --args pytest -v .
