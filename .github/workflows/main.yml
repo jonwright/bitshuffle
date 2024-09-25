@@ -24,13 +24,13 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
-        sudo apt-get install -y libhdf5-serial-dev hdf5-tools pkg-config gdb
+        sudo apt-get install -y libhdf5-serial-dev hdf5-tools pkg-config
 
     - name: Install homebrew dependencies
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
         brew update
-        brew install hdf5 pkg-config
+        brew install hdf5 pkg-config gdb
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
