@@ -57,4 +57,4 @@ jobs:
         python setup.py install --h5plugin --h5plugin-dir ~/hdf5/lib --zstd
 
     - name: Run tests
-      run: lldb --batch --one-line 'process launch' --one-line-on-crash 'bt' --one-line-on-crash 'quit' -- python -P tests/test_ext.py 
+      run: lldb -O 'settings set target.process.stop-on-exec false' --batch --one-line 'process launch' --one-line-on-crash 'bt' --one-line-on-crash 'quit' -- python -P tests/test_ext.py 
