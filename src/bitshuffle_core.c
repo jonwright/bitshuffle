@@ -1940,9 +1940,9 @@ int64_t bshuf_blocked_decompress_wrap_fun(bshufBlockFunDefDC fun, const void* in
     #pragma omp parallel private(C, count) shared(offsets, last_in, last_out,) reduction(+ : cum_count)
     {
     /* thread local structure */
+#endif
     C = (struct o_chain *) malloc( sizeof(struct o_chain) );
     #pragma omp for schedule(static)
-#endif
     for (ii = 0; ii < nblocks; ii ++) {
 
         C->in = (void*) ((char *) offsets[ii]);
