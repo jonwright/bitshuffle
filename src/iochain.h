@@ -25,7 +25,7 @@
  * Usage
  * -----
  *  - Call `ioc_init` in serial block.
- *  - Each thread should create a local variable *size_t this_iter* and 
+ *  - Each thread should create a local variable *size_t this_iter* and
  *    pass its address to all function calls. Its value will be set
  *    inside the functions and is used to identify the thread.
  *  - Each thread must call each of the `ioc_get*` and `ioc_set*` methods
@@ -53,6 +53,17 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
+
+
+typedef struct o_chain {
+  const void *i0;
+  const void *o0;
+  void *in;
+  void *out;
+  size_t current;
+  uint32_t nbytes;
+} o_chain;
 
 
 #define IOC_SIZE 33
@@ -90,5 +101,8 @@ void ioc_set_next_in(ioc_chain *C, size_t* this_iter, void* in_ptr);
 void * ioc_get_out(ioc_chain *C, size_t *this_iter);
 void ioc_set_next_out(ioc_chain *C, size_t *this_iter, void* out_ptr);
 
-#endif  // IOCHAIN_H
 
+void o_chain_init( o_chain *C, const void *in, const void* out);
+void o_chain_goto( o_chain *C, size_t ii, size_t osize );
+
+#endif  // IOCHAIN_H
